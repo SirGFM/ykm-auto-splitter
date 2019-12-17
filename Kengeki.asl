@@ -1,58 +1,81 @@
 state("Kengeki") {
-	int gameLoading: 0x4067B0;
-	int bossActive: 0x401710; //works on: cirno, marisa, aya, nitori, reimu
-	int bossActive2: 0x401714; //works on toad, momiji
-	int orbCount: 0x00407FC4, 0x2C;
-	string4 mapName: 0x00401700, 0x54, 0x38, 0x14, 0x14;
+	/* In Cheat Engine, use 'Kengeki.exe' as the base module.
+	 * It accepts mixing module name and offsets for inspecting memory,
+	 * so 'kengeki.exe + 401710' is a perfectly valid address. */
+
+	ulong bossActive: 0x401710;
+	string4 mapName: 0x401700, 0x54, 0x38, 0x14, 0x14;
+	byte bGameLoading: 0x4067B1;
 }
 
 startup {
-	settings.Add("RiverSplit", false, "Split when leaving the River and entering Hakurei Shrine");
-	settings.Add("OrbSplit", false, "Split when collecting a yellow orb");
-	settings.Add("FullOrb", false, "Only split when 3 orbs are collected", "OrbSplit");
-	settings.Add("HakureiOrb", false, "Only split when all 3 orbs are collected in Hakurei Shrine", "OrbSplit");
+	/* TODO: Re-add options */
+}
+
+init {
+	vars.trySplit = 0;
+	vars.sanaeMechCutscene = 0;
 }
 
 split {
-	if (current.bossActive == 0 && old.bossActive != 0 && old.bossActive2 == 0) {
-		return true;
-	}
-
-	if (current.bossActive2 == 0 && old.bossActive2 != 0 && old.bossActive == 0) {
-		return true;
-	}
-
-	if (current.orbCount != 0 && current.orbCount != old.orbCount && settings["OrbSplit"] == true && settings["FullOrb"] == false && current.mapName != "st05") {
-		return true;
-	}
-
-	if (settings["FullOrb"] == true && old.orbCount == 2 && current.orbCount == 3) {
-		return true;
-	}
-
-	if (current.mapName == "st05") {
-		if (settings["FullOrb"] == true || settings["HakureiOrb"] == true && old.orbCount == 2 && current.orbCount == 3) {
-			return true;
-		}
-
-		if (settings["HakureiOrb"] == false && settings["FullOrb"] == false && current.orbCount != 0 && current.orbCount != old.orbCount) {
-			return true;
+	if ((current.bossActive >> 32 != 0) &&
+			(current.bossActive & 0xffffffff) != 0) {
+		/* Usually, either the high or the low 32 bits of bossActive are set.
+		 * However, on Sanae's mech cutscenes (pre and post fight) and on the
+		 * final cutscene, both the 32 bits words are set.
+		 *
+		 * Ignore Sanae's mech cutscenes (by simply counting how many times they
+		 * happened) and split on the third and final time this happens (which
+		 * should be on the final cutscene). */
+		if (vars.trySplit == 0) {
+			if (vars.sanaeMechCutscene < 2) {
+				vars.sanaeMechCutscene++;
+			}
+			else {
+				return true;
+			}
+			vars.trySplit = 1;
 		}
 	}
-
-	if (current.mapName == "st05" && old.mapName != "st05" && current.gameLoading != 1 && settings["RiverSplit"] == true) {
+	else if (vars.trySplit == 5) {
+		vars.trySplit = 0;
 		return true;
 	}
+	else if (vars.trySplit > 0 && current.bossActive == 0) {
+		vars.trySplit++;
+	}
+	else if (current.bossActive == 0 && old.bossActive != 0) {
+		/* Except by the final boss, as soon as a boss dies bossActive
+		 * becomes 0. However, this also happens for a few (possibly only one)
+		 * frames if the player dies.
+		 *
+		 * To account for that, ensure that bossActive changes and stays as 0
+		 * for a few (5) frames before splitting. */
+		vars.trySplit = 1;
+	}
+	else {
+		vars.trySplit = 0;
+	}
+
+	return false;
 }
 
 start {
-	return (current.gameLoading == 1 && current.mapName == "st01");
+	if (current.mapName == "st01" &&
+			(current.bGameLoading == 0 && old.bGameLoading == 1)) {
+		vars.sanaeMechCutscene = 0;
+		return true;
+	}
 }
 
 reset {
-	return (current.gameLoading != 1 && current.mapName == "st01");
+	if (current.mapName == "st01" &&
+			(current.bGameLoading == 0 && old.bGameLoading == 1)) {
+		vars.sanaeMechCutscene = 0;
+		return true;
+	}
 }
 
 isLoading {
-	return current.gameLoading != 1;
+	return current.bGameLoading == 1;
 }
