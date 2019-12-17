@@ -17,29 +17,29 @@ split {
 	if (current.bossActive == 0 && old.bossActive != 0 && old.bossActive2 == 0) {
 		return true;
 	}
-	
+
 	if (current.bossActive2 == 0 && old.bossActive2 != 0 && old.bossActive == 0) {
 		return true;
 	}
-	
+
 	if (current.orbCount != 0 && current.orbCount != old.orbCount && settings["OrbSplit"] == true && settings["FullOrb"] == false && current.mapName != "st05") {
 		return true;
 	}
-	
+
 	if (settings["FullOrb"] == true && old.orbCount == 2 && current.orbCount == 3) {
 		return true;
 	}
-	
+
 	if (current.mapName == "st05") {
 		if (settings["FullOrb"] == true || settings["HakureiOrb"] == true && old.orbCount == 2 && current.orbCount == 3) {
 			return true;
 		}
-		
+
 		if (settings["HakureiOrb"] == false && settings["FullOrb"] == false && current.orbCount != 0 && current.orbCount != old.orbCount) {
 			return true;
 		}
 	}
-	
+
 	if (current.mapName == "st05" && old.mapName != "st05" && current.gameLoading != 1 && settings["RiverSplit"] == true) {
 		return true;
 	}
