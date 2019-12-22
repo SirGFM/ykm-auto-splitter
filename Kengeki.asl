@@ -31,7 +31,6 @@ startup {
 
 init {
 	vars.trySplit = 0;
-	vars.sanaeMechCutscene = 0;
 }
 
 split {
@@ -41,17 +40,9 @@ split {
 		 * However, on Sanae's mech cutscenes (pre and post fight) and on the
 		 * final cutscene, both the 32 bits words are set.
 		 *
-		 * Ignore Sanae's mech cutscenes (by simply counting how many times they
-		 * happened) and split on the third and final time this happens (which
-		 * should be on the final cutscene). */
-		if (vars.trySplit == 0) {
-			if (vars.sanaeMechCutscene < 2) {
-				vars.sanaeMechCutscene++;
-			}
-			else {
-				return true;
-			}
-			vars.trySplit = 1;
+		 * Ignore Sanae's mech cutscenes and split only on the final level. */
+		if (current.level == 60) {
+			return true;
 		}
 	}
 	else if (vars.trySplit == 5) {
@@ -79,18 +70,12 @@ split {
 
 start {
 	// XXX: This will have to be more complex for 100%...
-	if (old.bInGame == 0 && current.bInGame == 1) {
-		vars.sanaeMechCutscene = 0;
-		return true;
-	}
+	return (old.bInGame == 0 && current.bInGame == 1);
 }
 
 reset {
 	// XXX: This will have to be more complex for 100%...
-	if (current.level == 10 && current.bInGame == 1 && old.bInGame == 0) {
-		vars.sanaeMechCutscene = 0;
-		return true;
-	}
+	return (current.level == 10 && current.bInGame == 1 && old.bInGame == 0);
 }
 
 isLoading {
