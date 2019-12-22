@@ -4,8 +4,25 @@ state("Kengeki") {
 	 * so 'kengeki.exe + 401710' is a perfectly valid address. */
 
 	ulong bossActive: 0x401710;
-	string4 mapName: 0x401700, 0x54, 0x38, 0x14, 0x14;
 	byte bGameLoading: 0x4067B1;
+
+	/* 0x407fc4 - points to a game state(?) struct
+	 *   - 0x0c: in game? (i.e., 0 in mainmenu)
+	 *   - 0x20: cur level
+	 *       - level 1: 10 (cirno/frog)
+	 *       - level 2: 20 (marisa)
+	 *       - level 3: 30 (aya)
+	 *       - level 4: 40 (sanae/mecha - reimu's river)
+	 *       - level 5: 50 (reimu)
+	 *       - level 6: 60 (yuyuko)
+	 *       - level 7: 70 (sanae)
+	 *   - 0x28: difficulty
+	 *   - 0x2c: orb count
+	 *   - 0x38: death count
+	 *   - 0x40: fall count
+	 */
+	byte bInGame: 0x407fc4, 0x0c;
+	int level: 0x407fc4, 0x20;
 }
 
 startup {
@@ -61,21 +78,21 @@ split {
 }
 
 start {
-	if (current.mapName == "st01" &&
-			(current.bGameLoading == 0 && old.bGameLoading == 1)) {
+	// XXX: This will have to be more complex for 100%...
+	if (old.bInGame == 0 && current.bInGame == 1) {
 		vars.sanaeMechCutscene = 0;
 		return true;
 	}
 }
 
 reset {
-	if (current.mapName == "st01" &&
-			(current.bGameLoading == 0 && old.bGameLoading == 1)) {
+	// XXX: This will have to be more complex for 100%...
+	if (current.level == 10 && current.bInGame == 1 && old.bInGame == 0) {
 		vars.sanaeMechCutscene = 0;
 		return true;
 	}
 }
 
 isLoading {
-	return current.bGameLoading == 1;
+	return current.bGameLoading == 1 || old.bInGame == 0;
 }
