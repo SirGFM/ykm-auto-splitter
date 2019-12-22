@@ -23,6 +23,24 @@ state("Kengeki") {
 	 */
 	byte bInGame: 0x407fc4, 0x0c;
 	int level: 0x407fc4, 0x20;
+
+	/* For the record, this means something like:
+	 *
+	 * struct first {
+	 *     // ...
+	 *     struct second *data; // offsetof(struct first, data) == 0x7c
+	 * };
+	 *
+	 * struct second {
+	 *     // ...
+	 *     int health; // offset(struct second, health) == 0x2a8
+	 * };
+	 *
+	 * struct first *health_access = 0x407ffc;
+	 *
+	 * health = health_access->data->health;
+	 */
+	int health: 0x407ffc, 0x7c, 0x2a8;
 }
 
 startup {
@@ -30,7 +48,6 @@ startup {
 }
 
 init {
-	vars.trySplit = 0;
 }
 
 split {
@@ -45,27 +62,16 @@ split {
 			return true;
 		}
 	}
-	else if (vars.trySplit == 5) {
-		vars.trySplit = 0;
-		return true;
-	}
-	else if (vars.trySplit > 0 && current.bossActive == 0) {
-		vars.trySplit++;
-	}
-	else if (current.bossActive == 0 && old.bossActive != 0) {
+	else if (current.bossActive == 0 && old.bossActive != 0 &&
+			 old.health > 0 && current.health > 0) {
 		/* Except by the final boss, as soon as a boss dies bossActive
 		 * becomes 0. However, this also happens for a few (possibly only one)
 		 * frames if the player dies.
 		 *
-		 * To account for that, ensure that bossActive changes and stays as 0
-		 * for a few (5) frames before splitting. */
-		vars.trySplit = 1;
+		 * To account for that, check that the player is still alive as soon as
+		 * that happens */
+		return true;
 	}
-	else {
-		vars.trySplit = 0;
-	}
-
-	return false;
 }
 
 start {
