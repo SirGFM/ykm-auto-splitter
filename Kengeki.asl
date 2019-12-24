@@ -74,13 +74,14 @@ startup {
 	settings.Add("Momiji", false, "Split after defeating Momiji");
 	settings.Add("Yuyuko phase 1", false,
 				 "Split after defeating Yuyuko's first phase");
-}
 
-init {
-	vars.yuyukoPhase = 1;
-	vars.cirno = false;
-	vars.momiji = false;
-	vars.nextLevel = 20;
+	/* Lambda expresion that takes 0 arguments and has void return */
+	vars.reset = (Action) ( () => {
+		vars.yuyukoPhase = 1;
+		vars.cirno = false;
+		vars.momiji = false;
+		vars.nextLevel = 20;
+	} );
 }
 
 split {
@@ -160,16 +161,16 @@ split {
 
 start {
 	// XXX: This will have to be more complex for 100%...
-	return (old.bInGame == 0 && current.bInGame == 1);
+	if (old.bInGame == 0 && current.bInGame == 1) {
+		vars.reset();
+		return true;
+	}
 }
 
 reset {
 	// XXX: This will have to be more complex for 100%...
 	if (current.level == 10 && current.bInGame == 1 && old.bInGame == 0) {
-		vars.yuyukoPhase = 1;
-		vars.cirno = false;
-		vars.momiji = false;
-		vars.nextLevel = 20;
+		vars.reset();
 		return true;
 	}
 }
