@@ -74,13 +74,19 @@ startup {
 	settings.Add("Momiji", false, "Split after defeating Momiji");
 	settings.Add("Yuyuko phase 1", false,
 				 "Split after defeating Yuyuko's first phase");
+	settings.Add("Extra start", false, "100% - Start on the extra stage");
 
-	/* Lambda expresion that takes 0 arguments and has void return */
-	vars.reset = (Action) ( () => {
+	/* Lambda expresion that takes a boolean and has void return */
+	vars.reset = (Action<bool>) ( (isExtra) => {
 		vars.yuyukoPhase = 1;
 		vars.cirno = false;
 		vars.momiji = false;
-		vars.nextLevel = 20;
+		if (isExtra) {
+			vars.nextLevel = 10;
+		}
+		else {
+			vars.nextLevel = 20;
+		}
 	} );
 }
 
@@ -150,9 +156,6 @@ split {
 		case 30:
 			vars.nextLevel += 10;
 			break;
-		case 70:
-			vars.nextLevel = 10;
-			break;
 		}
 
 		return true;
@@ -160,17 +163,26 @@ split {
 }
 
 start {
-	// XXX: This will have to be more complex for 100%...
 	if (old.bInGame == 0 && current.bInGame == 1) {
-		vars.reset();
+		vars.reset(settings["Extra start"]);
 		return true;
 	}
 }
 
 reset {
-	// XXX: This will have to be more complex for 100%...
-	if (current.level == 10 && current.bInGame == 1 && old.bInGame == 0) {
-		vars.reset();
+	int firstStage;
+
+	if (settings["Extra start"]) {
+		firstStage = 70;
+	}
+	else {
+		firstStage = 10;
+	}
+
+	if (current.level == firstStage && current.bInGame == 1
+		&& old.bInGame == 0) {
+
+		vars.reset(settings["Extra start"]);
 		return true;
 	}
 }
