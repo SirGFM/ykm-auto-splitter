@@ -88,6 +88,33 @@ startup {
 			vars.nextLevel = 20;
 		}
 	} );
+
+	/* XXX: Trying to use 'settings', 'current' or 'old' within a lambda
+	 * causes it to explode (or, at least, to misbehave). It probably has
+	 * something to do with how variables are captured into the lambda...
+	 *
+	 * Although using those objects directly does not work, manually
+	 * accessing them from the caller and passing the value themselves
+	 * into the lambda works perfectly. */
+	vars.checkStart = (Func<bool, int, bool, bool, bool>) (
+		(isExtra, level, isInGame, wasInGame) => {
+
+		int firstStage;
+
+		if (isExtra) {
+			firstStage = 70;
+		}
+		else {
+			firstStage = 10;
+		}
+
+		if (level == firstStage && isInGame && !wasInGame) {
+
+			vars.reset(isExtra);
+			return true;
+		}
+		return false;
+	} );
 }
 
 split {
@@ -163,41 +190,13 @@ split {
 }
 
 start {
-	/* For some reason, trying to put this into a lambda function breaks
-	 * start... So, for now, this is simply a copy of reset. D: */
-	int firstStage;
-
-	if (settings["Extra start"]) {
-		firstStage = 70;
-	}
-	else {
-		firstStage = 10;
-	}
-
-	if (current.level == firstStage && current.bInGame == 1
-		&& old.bInGame == 0) {
-
-		vars.reset(settings["Extra start"]);
-		return true;
-	}
+	return vars.checkStart(settings["Extra start"], current.level,
+						   current.bInGame == 1, old.bInGame == 1);
 }
 
 reset {
-	int firstStage;
-
-	if (settings["Extra start"]) {
-		firstStage = 70;
-	}
-	else {
-		firstStage = 10;
-	}
-
-	if (current.level == firstStage && current.bInGame == 1
-		&& old.bInGame == 0) {
-
-		vars.reset(settings["Extra start"]);
-		return true;
-	}
+	return vars.checkStart(settings["Extra start"], current.level,
+						   current.bInGame == 1, old.bInGame == 1);
 }
 
 isLoading {
