@@ -163,7 +163,20 @@ split {
 }
 
 start {
-	if (old.bInGame == 0 && current.bInGame == 1) {
+	/* For some reason, trying to put this into a lambda function breaks
+	 * start... So, for now, this is simply a copy of reset. D: */
+	int firstStage;
+
+	if (settings["Extra start"]) {
+		firstStage = 70;
+	}
+	else {
+		firstStage = 10;
+	}
+
+	if (current.level == firstStage && current.bInGame == 1
+		&& old.bInGame == 0) {
+
 		vars.reset(settings["Extra start"]);
 		return true;
 	}
