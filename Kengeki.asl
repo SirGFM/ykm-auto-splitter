@@ -75,6 +75,7 @@ startup {
 	settings.Add("Yuyuko phase 1", false,
 				 "Split after defeating Yuyuko's first phase");
 	settings.Add("Extra start", false, "100% - Start on the extra stage");
+	settings.Add("Remote debug", false, "Enable remote Auto Splitter debug (requires Python)");
 
 	/* Lambda expresion that takes a boolean and has void return */
 	vars.reset = (Action<bool>) ( (isExtra) => {
@@ -115,16 +116,46 @@ startup {
 		}
 		return false;
 	} );
+
+	/* Lambda expression that sends a debug message to a local TCP server,
+	 * using a unique and different client each time. */
+	vars.remoteDebug = (Action<string>) ( (msg) => {
+		try {
+			System.Net.Sockets.TcpClient clt;
+			System.Net.Sockets.NetworkStream conn;
+
+			clt = new System.Net.Sockets.TcpClient("127.0.0.1", 60000);
+			conn = clt.GetStream();
+
+			byte[] data = Encoding.ASCII.GetBytes(msg);
+			conn.Write(data, 0, data.Length);
+
+			conn.Close();
+			clt.Close();
+		} catch (Exception e) {
+		}
+	} );
 }
 
 split {
 	int level = current.level;
+
+	if (settings["Remote debug"]) {
+		if (old.level != current.level) {
+			vars.remoteDebug("!!! Old level: " + old.level);
+			vars.remoteDebug("!!! New level: " + current.level);
+		}
+	}
 
 	/* Corner cases */
 	switch (level) {
 	case 10:
 		if (!vars.cirno && settings["Cirno"] && old.bossAHealth > 0
 			&& current.bossAHealth <= 0) {
+
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("Cirno split!");
+			}
 
 			vars.cirno = true;
 			return true;
@@ -133,6 +164,10 @@ split {
 	case 30:
 		if (!vars.momiji && settings["Momiji"] && old.bossBHealth > 0
 			&& current.bossBHealth <= 0) {
+
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("Momiji split!");
+			}
 
 			vars.momiji = true;
 			return true;
@@ -148,7 +183,15 @@ split {
 			/* This sometimes get triggered as the cutscenes is ending.
 			 * Avoid that by making sure the robot is the only actor in the scene */
 			if (old.bossBPointer == 0 && current.bossBPointer == 0) {
+				if (settings["Remote debug"]) {
+					vars.remoteDebug("Robot split");
+				}
+
 				vars.nextLevel = 60;
+
+				if (settings["Remote debug"]) {
+					vars.remoteDebug("  Next: " + vars.nextLevel);
+				}
 				return true;
 			}
 		}
@@ -159,14 +202,27 @@ split {
 		if (vars.yuyukoPhase == 1 && old.bossAHealth != 50 
 			&& current.bossAHealth == 50) {
 
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("Done with Yuyuko phase 1!");
+			}
+
 			vars.yuyukoPhase = 2;
 			if (settings["Yuyuko phase 1"]) {
+				if (settings["Remote debug"]) {
+					vars.remoteDebug("Yuyuko split");
+				}
+
 				return true;
 			}
 		}
 		else if (vars.yuyukoPhase == 2 && current.bossATimer >= 0x42469900) {
 			/* XXX: This was only tested in Easy... The timer may take
 			 * longer in other difficulties! */
+
+			if (settings["Remote debug"]) {
+				vars.remoteDebug(".done !!!");
+			}
+
 			return true;
 		}
 		break;
@@ -177,12 +233,20 @@ split {
 	/* In regular cases, simply split after detecting that the level
 	 * changed */
 	if (old.level != current.level && current.level == vars.nextLevel) {
+		if (settings["Remote debug"]) {
+			vars.remoteDebug("Regular split from " + old.level + " to " + current.level);
+		}
+
 		switch (level) {
 		case 10:
 		case 20:
 		case 30:
 			vars.nextLevel += 10;
 			break;
+		}
+
+		if (settings["Remote debug"]) {
+			vars.remoteDebug("  Next: " + vars.nextLevel);
 		}
 
 		return true;
