@@ -83,6 +83,7 @@ startup {
 		vars.yuyukoPhase = 1;
 		vars.cirno = false;
 		vars.momiji = false;
+		vars.justBeatRobot = false;
 		if (isExtra) {
 			vars.nextLevel = 10;
 		}
@@ -177,7 +178,9 @@ split {
 	case 40:
 		/* The game stil tracks the level after the robot (the river) as
 		 * "Level 4". Therefore, this has to be split slightly
-		 * differently... */
+		 * differently...
+		 * Cache that the boss was defeated (by tracking its health) and
+		 * then split as soon as the game start loading the next scene. */
 		if (old.level == 40 && old.bossAHealth > 0
 			&& current.bossAHealth <= 0) {
 
@@ -185,29 +188,9 @@ split {
 			 * Avoid that by making sure the robot is the only actor in the scene */
 			if (old.bossBPointer == 0 && current.bossBPointer == 0) {
 				if (settings["Remote debug"]) {
-					vars.remoteDebug("Robot split");
+					vars.remoteDebug("Robot defeated!");
 				}
-
-				if (settings["River"]) {
-					if (settings["Remote debug"]) {
-						vars.remoteDebug("  Next: River split");
-					}
-
-					vars.nextLevel = 50;
-				}
-				else {
-
-					if (settings["Remote debug"]) {
-						vars.remoteDebug("  Next: Reimu split");
-					}
-
-					vars.nextLevel = 60;
-				}
-
-				if (settings["Remote debug"]) {
-					vars.remoteDebug("  Next: " + vars.nextLevel);
-				}
-				return true;
+				vars.justBeatRobot = true;
 			}
 		}
 		break;
@@ -265,6 +248,36 @@ split {
 			vars.remoteDebug("  Next: " + vars.nextLevel);
 		}
 
+		return true;
+	}
+	else if (old.level == 40 && vars.justBeatRobot
+			 && old.bGameLoading == 0 && current.bGameLoading == 1) {
+		/* Special corner case for the Robot split */
+
+		vars.justBeatRobot = false;
+		if (settings["Remote debug"]) {
+			vars.remoteDebug("Robot split");
+		}
+
+		if (settings["River"]) {
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("  Next: River split");
+			}
+
+			vars.nextLevel = 50;
+		}
+		else {
+
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("  Next: Reimu split");
+			}
+
+			vars.nextLevel = 60;
+		}
+
+		if (settings["Remote debug"]) {
+			vars.remoteDebug("  Next: " + vars.nextLevel);
+		}
 		return true;
 	}
 }
