@@ -22,6 +22,7 @@ state("Kengeki") {
 	 */
 	byte bInGame: 0x407fc4, 0x0c;
 	int level: 0x407fc4, 0x20;
+	int orbCount: 0x407fc4, 0x2c;
 
 	/* The game keeps two pointers for bosses. Those are used when a level
 	 * has two bosses (e.g., the first level) and when there are NPCs in
@@ -75,6 +76,12 @@ startup {
 	settings.Add("River", false, "Split after the river stage (Level 4-2)");
 	settings.Add("Yuyuko phase 1", false,
 				 "Split after defeating Yuyuko's first phase");
+	settings.Add("OrbSplit", false, "Split when collecting a yellow orb");
+	settings.Add("FullOrb", false,
+				 "Only split when 3 orbs are collected", "OrbSplit");
+	settings.Add("HakureiOrb", false,
+				 "Only split when all 3 orbs are collected in Hakurei Shrine",
+				 "OrbSplit");
 	settings.Add("Extra start", false, "100% - Start on the extra stage");
 	settings.Add("Remote debug", false, "Enable remote Auto Splitter debug (requires Python)");
 
@@ -279,6 +286,26 @@ split {
 			vars.remoteDebug("  Next: " + vars.nextLevel);
 		}
 		return true;
+	}
+	else if (settings["OrbSplit"] && current.orbCount != 0
+			 && old.orbCount != current.orbCount) {
+		/* Optional splits: Split when collecting yellow orbs */
+
+		if ((!settings["HakureiOrb"] || current.level != 50)
+			&& !settings["FullOrb"]) {
+
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("Got a new orb (" + current.orbCount + "/3)");
+			}
+			return true;
+		}
+		else if (((settings["HakureiOrb"] && current.level == 50)
+				  || settings["FullOrb"]) && current.orbCount == 3) {
+			if (settings["Remote debug"]) {
+				vars.remoteDebug("Got 3 orbs");
+			}
+			return true;
+		}
 	}
 }
 
