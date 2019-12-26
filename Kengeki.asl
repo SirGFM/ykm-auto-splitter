@@ -72,6 +72,7 @@ state("Kengeki") {
 startup {
 	settings.Add("Cirno", false, "Split after defeating Cirno");
 	settings.Add("Momiji", false, "Split after defeating Momiji");
+	settings.Add("River", false, "Split after the river stage (Level 4-2)");
 	settings.Add("Yuyuko phase 1", false,
 				 "Split after defeating Yuyuko's first phase");
 	settings.Add("Extra start", false, "100% - Start on the extra stage");
@@ -187,7 +188,21 @@ split {
 					vars.remoteDebug("Robot split");
 				}
 
-				vars.nextLevel = 60;
+				if (settings["River"]) {
+					if (settings["Remote debug"]) {
+						vars.remoteDebug("  Next: River split");
+					}
+
+					vars.nextLevel = 50;
+				}
+				else {
+
+					if (settings["Remote debug"]) {
+						vars.remoteDebug("  Next: Reimu split");
+					}
+
+					vars.nextLevel = 60;
+				}
 
 				if (settings["Remote debug"]) {
 					vars.remoteDebug("  Next: " + vars.nextLevel);
@@ -241,6 +256,7 @@ split {
 		case 10:
 		case 20:
 		case 30:
+		case 50:
 			vars.nextLevel += 10;
 			break;
 		}
