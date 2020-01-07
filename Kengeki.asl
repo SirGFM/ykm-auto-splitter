@@ -320,5 +320,5 @@ reset {
 }
 
 isLoading {
-	return current.bGameLoading == 1 || old.bInGame == 0;
+	return current.bGameLoading == 1;
 }
