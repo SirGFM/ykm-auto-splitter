@@ -1,4 +1,9 @@
-state("Kengeki") {
+state("Kengeki", "1.0") {
+	int gameLoading:	0x3EB644;	//257 when loading
+	//rest to be added if anyone actually cares to
+}
+
+state("Kengeki", "1.2") {
 	/* In Cheat Engine, use 'Kengeki.exe' as the base module.
 	 * It accepts mixing module name and offsets for inspecting memory,
 	 * so 'kengeki.exe + 401710' is a perfectly valid address. */
@@ -144,6 +149,16 @@ startup {
 		} catch (Exception e) {
 		}
 	} );
+}
+
+init {
+	if (modules.First().ModuleMemorySize == 4521984) {
+		version = "1.0";
+	}
+	
+	else {
+		version = "1.2";
+	}
 }
 
 split {
@@ -320,5 +335,11 @@ reset {
 }
 
 isLoading {
-	return current.bGameLoading == 1;
+	if (version == "1.2") {
+		return current.bGameLoading == 1;
+	}
+	
+	else if (version == "1.0") {
+		return current.gameLoading == 257;
+	}
 }
